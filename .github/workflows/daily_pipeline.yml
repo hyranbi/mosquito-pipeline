@@ -1,0 +1,32 @@
+name: Daily Mosquito Data Pipeline (Yesterday's Data)
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 매일 UTC 07:00 (한국 시간 오후 4:00) 실행
+  workflow_dispatch:       # 수동 실행 지원
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install requests google-cloud-bigquery
+
+      - name: Create gcp_key.json from GitHub Secrets
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SA_KEY" > gcp_key.json
+
+      - name: Run daily ingestion script
+        run: |
+          python daily_ingest.py
